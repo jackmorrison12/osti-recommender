@@ -2,11 +2,11 @@ from flask import Flask
 from flask import redirect, url_for, request, jsonify
 from flask_mail import Mail, Message
 from flask_mongoengine import MongoEngine
-import datetime
-
+from database.models.users import Users
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from engines.v1.v1 import v1
 
 # Get the base directory
 basepath = Path()
@@ -34,13 +34,6 @@ app.config['MONGODB_SETTINGS'] = {
 }
 
 db.init_app(app)
-
-
-class Users(db.DynamicDocument):
-    name = db.StringField(required=True)
-    email = db.StringField(required=True)
-    createdAt = db.DateTimeField(
-        default=datetime.datetime.utcnow, required=True)
 
 
 @ app.route('/db', methods=['GET'])
@@ -75,8 +68,7 @@ def send():
 
 @ app.route('/')
 def index():
-    return jsonify({'name': 'alice',
-                    'email': 'test@outlook.com'})
+    return v1()
 
 
 @ app.route('/hello')
@@ -102,4 +94,3 @@ def login():
     else:
         user = request.args.get('name')
         return "hello"
-
