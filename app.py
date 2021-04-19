@@ -103,5 +103,3 @@ def login():
         user = request.args.get('name')
         return "hello"
 
-port = int(os.getenv("PORT", 5000))
-app.run(host='0.0.0.0', port=port)
