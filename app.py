@@ -44,12 +44,13 @@ celery.conf.update(app.config)
 
 @celery.task
 def task_func(arg1, arg2):
-    # some long running task here
-    msg = Message('Hello', sender=os.getenv('EMAIL'),
-                  recipients=[os.getenv('EMAIL')])
-    msg.body = "Sent from redis " + arg1
-    mail.send(msg)
-    return "done"
+    with app.app_context():
+        # some long running task here
+        msg = Message('Hello', sender=os.getenv('EMAIL'),
+                      recipients=[os.getenv('EMAIL')])
+        msg.body = "Sent from redis on heroku"
+        mail.send(msg)
+        return "done"
 
 
 @ app.route('/redis')
