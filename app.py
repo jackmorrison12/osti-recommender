@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from engines.v1.v1 import v1
+from celery import Celery
 
 # Get the base directory
 basepath = Path()
@@ -23,6 +24,8 @@ app.config['MAIL_USERNAME'] = os.getenv('EMAIL')
 app.config['MAIL_PASSWORD'] = os.getenv('EMAIL_PW')
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
+app.config['CELERY_BROKER_URL'] = os.getenv('REDIS_URL')
+app.config['CELERY_RESULT_BACKEND'] = os.getenv('REDIS_URL')
 
 mail = Mail(app)
 
@@ -34,6 +37,27 @@ app.config['MONGODB_SETTINGS'] = {
 }
 
 db.init_app(app)
+
+celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+celery.conf.update(app.config)
+
+
+@celery.task
+def task_func(arg1, arg2):
+    # some long running task here
+    msg = Message('Hello', sender=os.getenv('EMAIL'),
+                  recipients=[os.getenv('EMAIL')])
+    msg.body = "Sent from redis " + arg1
+    mail.send(msg)
+    return "done"
+
+
+@ app.route('/redis')
+def redis():
+    print("here")
+    task = task_func.delay(10, 20)
+    print(task)
+    return 'done'
 
 
 @ app.route('/db', methods=['GET'])
@@ -68,7 +92,8 @@ def send():
 
 @ app.route('/')
 def index():
-    return v1()
+    v1()
+    return "Done"
 
 
 @ app.route('/hello')
