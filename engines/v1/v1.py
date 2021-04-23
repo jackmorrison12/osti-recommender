@@ -6,6 +6,9 @@ from pymongo import MongoClient
 
 
 def v1():
+
+    print("Downloading data from database...")
+
     db = MongoClient(os.getenv('MONGO_URI')).osti
 
     cursor = db.listens.aggregate([
@@ -13,8 +16,8 @@ def v1():
         {"$group": {"_id": "$user_id", "listens": {
             "$push": "$$ROOT"}, "count": {"$sum": 1}}}
     ])
-
     listens = list(cursor)
+
     cursor = db.workouts.aggregate([
         {"$sort": {"start_time": 1}},
         {"$group": {"_id": "$user_id",
@@ -23,8 +26,10 @@ def v1():
                         "end_time": "$end_time",
                         "activity_type": "$activity_type"}},
                     "count": {"$sum": 1}}}])
-
     workouts = list(cursor)
+
+    print("Downloaded data from database")
+    print("Preparing data...")
 
     listens2 = {}
     for user in listens:
@@ -35,13 +40,10 @@ def v1():
         workouts2[user['_id']] = user["workouts"]
 
     workout_types = db.workouts.distinct("activity_type")
-    print(workout_types)
 
     songs = db.listens.distinct("song_id")
-    print(songs)
 
     users = db.users.distinct("_id")
-    print(users)
 
     workout2idx = {}
     idx2workout = {}
@@ -50,8 +52,6 @@ def v1():
         workout2idx[w] = index
         idx2workout[index] = w
         index += 1
-    print(workout2idx)
-    print(idx2workout)
 
     user2idx = {}
     idx2user = {}
@@ -60,8 +60,6 @@ def v1():
         user2idx[str(u)] = index
         idx2user[index] = str(u)
         index += 1
-    print(user2idx)
-    print(idx2user)
 
     song2idx = {}
     idx2song = {}
@@ -70,11 +68,10 @@ def v1():
         song2idx[str(s)] = index
         idx2song[index] = str(s)
         index += 1
-    print(song2idx)
-    print(idx2song)
 
-    # Get overlapping users (have both data)
-    # NEED TO CALC THESE SIZES
+    print("Data prepared")
+    print("Calculating utility matrix...")
+
     utility_matrix = np.zeros((len(users), len(workout_types), len(songs)))
 
     # Iterate over users
@@ -99,6 +96,8 @@ def v1():
                                                                             [cur_workout]['activity_type']]][song2idx[str(listen["song_id"])]] += 1
 
     # if listen before workout, pass
+    print("Calculated utility matrix")
+    print("Saving recommendations to database...")
 
     for uid, user in enumerate(utility_matrix):
         song_ranking = {}
@@ -121,5 +120,7 @@ def v1():
         # Add recommendations to database for this user
         db.recommendations.update_one({'user_id': idx2user[uid]}, {
             '$set': {"v1": song_ranking}}, upsert=True)
+
+    print("Saved recommendations to database")
 
     return utility_matrix
