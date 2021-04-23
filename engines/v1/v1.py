@@ -3,6 +3,7 @@ import numpy as np
 from tqdm import tqdm
 import os
 from pymongo import MongoClient
+from datetime import datetime
 
 
 def v1():
@@ -118,8 +119,9 @@ def v1():
                     song_ranking[idx2workout[wid]].append(w)
 
         # Add recommendations to database for this user
+        dt = datetime.now()
         db.recommendations.update_one({'user_id': idx2user[uid]}, {
-            '$set': {"v1": song_ranking}}, upsert=True)
+            '$set': {"v1": song_ranking, "updated_at": dt.microsecond}}, upsert=True)
 
     print("Saved recommendations to database")
 
