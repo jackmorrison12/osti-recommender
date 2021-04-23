@@ -75,7 +75,7 @@ def v1():
 
     # Get overlapping users (have both data)
     # NEED TO CALC THESE SIZES
-    utility_matrix = np.zeros((len(workout_types), len(users), len(songs)))
+    utility_matrix = np.zeros((len(users), len(workout_types), len(songs)))
 
     # Iterate over users
     for user in listens2:
@@ -85,8 +85,9 @@ def v1():
         for listen in listens2[user]:
             # if listen in workout, add that to utility matrix
             if listen['time'] * 1000 >= workouts2[user][cur_workout]['start_time'] and listen['time'] * 1000 <= workouts2[user][cur_workout]['end_time']:
-                utility_matrix[workout2idx[workouts2[user][cur_workout]['activity_type']]
-                               ][user2idx[listen['user_id']]][song2idx[str(listen["song_id"])]] += 1
+                utility_matrix[user2idx[listen['user_id']]][workout2idx[workouts2[user]
+                                                                        [cur_workout]['activity_type']]][song2idx[str(listen["song_id"])]] += 1
+
     # if listen after workout, increment workout times to next workout and check again
             elif listen["time"] * 1000 > workouts2[user][cur_workout]["end_time"]:
                 cur_workout += 1
@@ -94,14 +95,31 @@ def v1():
                     break
                 # Recheck if it lies in a new workout
                 if listen['time'] * 1000 >= workouts2[user][cur_workout]['start_time'] and listen['time'] * 1000 <= workouts2[user][cur_workout]['end_time']:
-                    utility_matrix[workout2idx[workouts2[user][cur_workout]['activity_type']]
-                                   ][user2idx[listen['user_id']]][song2idx[str(listen["song_id"])]] += 1
+                    utility_matrix[user2idx[listen['user_id']]][workout2idx[workouts2[user]
+                                                                            [cur_workout]['activity_type']]][song2idx[str(listen["song_id"])]] += 1
+
     # if listen before workout, pass
 
-    print(utility_matrix)
+    for uid, user in enumerate(utility_matrix):
+        song_ranking = {}
+        for wid, workout in enumerate(user):
+            nonzero = np.count_nonzero(workout)
+            if (nonzero) != 0:
+                # Cap recommendations at 100 songs
+                songs_to_get = min(nonzero, 100)
+                top_songs = np.argpartition(
+                    workout, -1*songs_to_get)[-1*songs_to_get:]
 
-    max_indicies = np.argpartition(utility_matrix[17][0], -5)[-5:]
+                song_map = {}
+                for m in top_songs:
+                    song_map[idx2song[m]] = workout[m]
 
-    for m in max_indicies:
-        print(idx2song[m], ":", utility_matrix[17][0][m])
+                song_ranking[idx2workout[wid]] = []
+                for w in sorted(song_map, key=song_map.get, reverse=True):
+                    song_ranking[idx2workout[wid]].append(w)
+
+        # Add recommendations to database for this user
+        db.recommendations.update_one({'user_id': idx2user[uid]}, {
+            '$set': {"v1": song_ranking}}, upsert=True)
+
     return utility_matrix

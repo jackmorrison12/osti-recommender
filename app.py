@@ -1,8 +1,6 @@
 from flask import Flask
-from flask import redirect, url_for, request, jsonify
 from flask_mail import Mail, Message
 from flask_mongoengine import MongoEngine
-from database.models.users import Users
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -28,7 +26,6 @@ app.config['CELERY_BROKER_URL'] = os.getenv('REDIS_URL')
 app.config['CELERY_RESULT_BACKEND'] = os.getenv('REDIS_URL')
 
 mail = Mail(app)
-
 db = MongoEngine()
 
 app.config['MONGODB_SETTINGS'] = {
@@ -43,80 +40,39 @@ celery.conf.update(app.config)
 
 
 @celery.task
-def task_func(arg1, arg2):
+def redis_test(arg1, arg2):
     with app.app_context():
         # some long running task here
         msg = Message('Hello', sender=os.getenv('EMAIL'),
                       recipients=[os.getenv('EMAIL')])
-        msg.body = "Sent from redis on heroku"
+        msg.body = "Sent from redis on Heroku"
         mail.send(msg)
         return "done"
+
+
+@celery.task
+def v1_redis():
+    with app.app_context():
+        v1()
+        return "Running v1"
+
+
+@ app.route('/v1')
+def v1_flask():
+    print("Running v1...")
+    task = v1_redis.delay()
+    print(task)
+    return 'v1 triggered'
 
 
 @ app.route('/redis')
 def redis():
     print("here")
-    task = task_func.delay(10, 20)
+    task = redis_test.delay(10, 20)
     print(task)
     return 'done'
 
 
-@ app.route('/db', methods=['GET'])
-def query_records():
-    email = request.args.get('email')
-    user = Users.objects(email=email).first()
-    if not user:
-        return jsonify({'error': 'data not found'})
-    else:
-        return jsonify(user)
-
-
-@ app.route('/db', methods=['POST'])
-def create_record():
-    # return request.form
-    record = request.form
-    # return record['name']
-    user = Users(name=record['name'],
-                 email=record['email'])
-    user.save()
-    return jsonify(user)
-
-
-@ app.route("/mail")
-def send():
-    msg = Message('Hello', sender=os.getenv('EMAIL'),
-                  recipients=[os.getenv('EMAIL')])
-    msg.body = "This is the email body"
-    mail.send(msg)
-    return "Sent"
-
-
 @ app.route('/')
 def index():
-    v1()
-    return "Done"
-
-
-@ app.route('/hello')
-def hello_world():
-    return "Hello world"
-
-
-@ app.route('/product/<name>')
-def get_product(name):
-    return "The product is " + str(name)
-
-
-@ app.route('/create/<first_name>/<last_name>')
-def create(first_name=None, last_name=None):
-    return 'Hello ' + first_name + ',' + last_name
-
-
-@ app.route('/login', methods=['POST', 'GET'])
-def login():
-    if request.method == 'POST':
-        user = request.form['name']
-        return redirect(url_for('hello_world'))
-    else:
-        user = request.args.get('name')
-        return "hello"
+    return "Osti Recommender"
