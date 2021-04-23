@@ -75,4 +75,5 @@ def redis():
 
 @ app.route('/')
 def index():
+    v1()
     return "Osti Recommender"
