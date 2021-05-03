@@ -8,13 +8,17 @@ from collections import defaultdict
 import datetime
 from scipy.spatial.distance import cdist
 import dateutil.parser as parser
+from bson import ObjectId
 
 
 def get_track_data(df, track_map, rating):
     tids, ratings, artists, albums, danceabilities, energies, keys, loudnesses, modes, speechinesses, acousticnesses, instrumentalnesses, livenesses, valences, tempos, time_signatures, release_dates = [
     ], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
     for index, row in df.iterrows():
-        if "features" in track_map[row['tid']] and "danceability" in track_map[row['tid']]['features']:
+
+        if row['tid'] not in track_map:
+            print(row['tid'])
+        elif "features" in track_map[row['tid']] and "danceability" in track_map[row['tid']]['features']:
             tids.append(row['tid'])
             if rating:
                 ratings.append(row['rating'])
@@ -161,6 +165,8 @@ def v2():
                                for _ in range(len(utility_matrix))]
     workout_tracks_map = [defaultdict(int) for _ in range(len(utility_matrix))]
 
+    tids = set()
+
     for wid, workout in enumerate(utility_matrix):
         # print(idx2workout[wid])
         for uid, user in enumerate(workout):
@@ -174,29 +180,46 @@ def v2():
                     user_workout_tracks_map[wid]['rating'].append(
                         (rating)/user_max)
                     workout_tracks_map[wid][idx2song[tid]] += rating
+                    tids.add(tid)
 
     print("1")
 
     cursor = db.cf_playlists.find({})
     cf_playlists = list(cursor)
+    print(len(tids))
 
     for i, playlist in enumerate(cf_playlists):
         for track in playlist['tracks']:
+            # print(track)
             workout_tracks_map[workout2idx[playlist['workout']]][track] += 1
+            # tids.add(str(track))
+            tids.add(ObjectId(track))
 
-    cursor = db.tracks.find({})
-    track_info = list(cursor)
-
+    print(len(tids))
     print("2")
+
+    # track_map = {}
+    # Make a dictionary of id to features
+    # for track in track_info:
+    #     track_map[str(track['_id'])] = track
+
+    cursor = db.listens.aggregate([{"$sort": {"time": 1}}, {"$group": {"_id": {"user_id": "$user_id", "song_id": "$song_id"}, "total": {
+                                  "$sum": 1}}}, {"$group": {"_id":  "$_id.user_id", "listens": {"$push": {"track_id": "$_id.song_id", "total": "$total"}}}}])
+    user_tracks_map = list(cursor)
+
+    for u in user_tracks_map:
+        for l in u['listens']:
+            tids.add(l['track_id'])
+    print(len(tids))
+
+    cursor = db.tracks.find({"_id": {"$in": list(tids)}})
+    track_info = list(cursor)
+    print(len(track_info))
 
     track_map = {}
     # Make a dictionary of id to features
     for track in track_info:
         track_map[str(track['_id'])] = track
-
-    cursor = db.listens.aggregate([{"$sort": {"time": 1}}, {"$group": {"_id": {"user_id": "$user_id", "song_id": "$song_id"}, "total": {
-                                  "$sum": 1}}}, {"$group": {"_id":  "$_id.user_id", "listens": {"$push": {"track_id": "$_id.song_id", "total": "$total"}}}}])
-    user_tracks_map = list(cursor)
 
     print("3")
 
