@@ -4,7 +4,8 @@ from flask_mongoengine import MongoEngine
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-from engines.v1.v1 import v1
+from engines.v1 import v1
+from engines.v2 import v2
 from celery import Celery
 
 # Get the base directory
@@ -57,12 +58,27 @@ def v1_redis():
         return "Running v1"
 
 
+@celery.task
+def v2_redis():
+    with app.app_context():
+        v2()
+        return "Running v2"
+
+
 @ app.route('/v1')
 def v1_flask():
     print("Running v1...")
     task = v1_redis.delay()
     print(task)
     return 'v1 triggered'
+
+
+@ app.route('/v2')
+def v2_flask():
+    print("Running v2...")
+    task = v2_redis.delay()
+    print(task)
+    return 'v2 triggered'
 
 
 @ app.route('/redis')
@@ -75,5 +91,6 @@ def redis():
 
 @ app.route('/')
 def index():
-    v1()
+    # v1()
+    v2()
     return "Osti Recommender"
