@@ -157,7 +157,6 @@ def v2():
                 utility_matrix[workout2idx[workouts2[user][cur_workout]['activity_type']]
                                ][user2idx[listen['user_id']]][song2idx[str(listen["song_id"])]] += 1
 
-    # if listen before workout, pass
     print("Calculated utility matrix")
     print("Getting user and workout songs...")
 
@@ -166,7 +165,6 @@ def v2():
     workout_tracks_map = [defaultdict(int) for _ in range(len(utility_matrix))]
 
     tids = set()
-
     for wid, workout in enumerate(utility_matrix):
         # print(idx2workout[wid])
         for uid, user in enumerate(workout):
@@ -182,26 +180,18 @@ def v2():
                     workout_tracks_map[wid][idx2song[tid]] += rating
                     tids.add(tid)
 
-    print("1")
+    # Adds in playlists of songs
 
-    cursor = db.cf_playlists.find({})
-    cf_playlists = list(cursor)
-    print(len(tids))
+    # cursor = db.cf_playlists.find({})
+    # cf_playlists = list(cursor)
+    # print(len(tids))
 
-    for i, playlist in enumerate(cf_playlists):
-        for track in playlist['tracks']:
-            # print(track)
-            workout_tracks_map[workout2idx[playlist['workout']]][track] += 1
-            # tids.add(str(track))
-            tids.add(ObjectId(track))
-
-    print(len(tids))
-    print("2")
-
-    # track_map = {}
-    # Make a dictionary of id to features
-    # for track in track_info:
-    #     track_map[str(track['_id'])] = track
+    # for i, playlist in enumerate(cf_playlists):
+    #     for track in playlist['tracks']:
+    #         # print(track)
+    #         workout_tracks_map[workout2idx[playlist['workout']]][track] += 1
+    #         # tids.add(str(track))
+    #         tids.add(ObjectId(track))
 
     cursor = db.listens.aggregate([{"$sort": {"time": 1}}, {"$group": {"_id": {"user_id": "$user_id", "song_id": "$song_id"}, "total": {
                                   "$sum": 1}}}, {"$group": {"_id":  "$_id.user_id", "listens": {"$push": {"track_id": "$_id.song_id", "total": "$total"}}}}])
@@ -210,25 +200,20 @@ def v2():
     for u in user_tracks_map:
         for l in u['listens']:
             tids.add(l['track_id'])
-    print(len(tids))
 
     cursor = db.tracks.find({"_id": {"$in": list(tids)}})
     track_info = list(cursor)
-    print(len(track_info))
 
     track_map = {}
     # Make a dictionary of id to features
     for track in track_info:
         track_map[str(track['_id'])] = track
 
-    print("3")
-
     # Convert all 3 maps to dataframes
     user_workout_tracks = []
     for w in user_workout_tracks_map:
         df = pd.DataFrame(w, columns=['uid', 'tid', 'rating'])
         user_workout_tracks.append(df)
-    # print(user_workout_tracks[17])
 
     workout_tracks = []
     for w in workout_tracks_map:
@@ -240,8 +225,6 @@ def v2():
                           c/(2*max_listens) for c in w.values()]}, columns=['tid', 'count'])
         workout_tracks.append(df)
 
-    # print(workout_tracks[17].sort_values('count', ascending=False))
-
     user_tracks = [pd.DataFrame({"tid": [], "count":[]}, columns=[
                                 'tid', 'count']) for _ in range(len(users))]
 
@@ -251,31 +234,25 @@ def v2():
                           l['total']/max_listens for l in u['listens']]}, columns=['tid', 'count'])
         user_tracks[user2idx[u['_id']]] = df
 
-    # print(user_tracks[0].sort_values('count', ascending=False))
-
-    print("4")
-
     user_tracks_features = []
     for df in tqdm(user_tracks):
         user_tracks_features.append(get_track_data(df, track_map, False))
 
-    # print(user_tracks_features[0].sort_values('rating', ascending=False))
-
     workout_tracks_features = []
     for df in tqdm(workout_tracks):
         workout_tracks_features.append(get_track_data(df, track_map, False))
-
-    # print(workout_tracks_features[17].sort_values('rating', ascending=False))
 
     print("User and workout songs retrieved")
     print("Calculating recommendations and saving to database...")
 
     # for u in users:
     for user in users:
-        user_recommendations = {}
-        # print(listens)
+        user_recommendations_v2 = {}
+        user_recommendations_v3 = {}
+        user_recommendations_v4 = {}
+
         # For each workout type of theirs - need a way to check if they have any listens for a particular workout, so iterate
-        # over each workout type, and if user_workout_tracks for uid and wid > 0, then generate reccomendations
+        # over each workout type, and if user_workout_tracks for uid and wid > 0, then generate recommendations
         for wid, workout_type in enumerate(user_workout_tracks):
             if (workout_type[workout_type.uid == str(user)].shape[0] > 0):
                 print("Generating", idx2workout[wid], "recommendations for user", str(
@@ -285,7 +262,6 @@ def v2():
                     user)]
                 workout_listening_history = get_track_data(
                     workout_listening_history, track_map, True)
-                # workout_listening_history = workout_listening_history.set_index('tid')
 
                 # Get the mean values of all the numeric columns - weighted by rating
                 avgs = []
@@ -296,10 +272,6 @@ def v2():
                     if col == 'release_date':
                         release_date_avg = np.average(workout_listening_history[col].apply(
                             lambda x: parser.parse(x).timestamp()), weights=workout_listening_history["rating"])
-                    # workout_listening_history[col].apply(lambda x: parser.parse(x).timestamp())
-                    # print(parsed)
-
-                # print(avgs)
 
                 # Make a one-hot encoding of album and artists, but values can be more than one depending on popularity
                 artist_map = defaultdict(int)
@@ -308,20 +280,19 @@ def v2():
                     if "spotify" in track_map[row['tid']]:
                         for a in row['artists']:
                             artist_map[a] += 1
-                # print(artist_map)
                 artist_max = max(artist_map.values())
 
                 # Get the trackset of potential tracks
                 trackset = pd.concat([workout_listening_history, workout_tracks_features[wid].sort_values('rating', ascending=False).head(
                     200), user_tracks_features[user2idx[str(user)]].sort_values('rating', ascending=False).head(1000)])
-                # print(trackset.shape[0])
                 trackset = trackset.drop_duplicates(subset=['tid'])
                 trackset = trackset.reset_index()
                 # Calculate cosine distance between the mean value vector and every song in user_tracks union workout_tracks - ADD IN RELEASE DATE
                 cosine = cdist([avgs], trackset.drop(
                     ['index', 'rating', 'artists', 'album', 'release_date'], axis=1).iloc[:, 1:], metric='cosine')
 
-                # Calculate the jaccard distance for the same but with album/artist
+                # Calculate the values with just artist weighting, and then also with
+                # more weighting on songs they usually listen to
                 combined = []
                 weighted = []
                 # print(trackset.shape[0])
@@ -334,15 +305,33 @@ def v2():
                     combined.append(total)
                     weighted.append(total*row['rating'])
 
-                max_list = np.argsort(weighted)[::-1]
-
+                v2_max_list = np.argsort(cosine[0])[::-1]
+                cosine[0].sort()
+                cosine[0] = cosine[0][::-1]
                 recs = []
-                for m in max_list:
-                    recs.append(trackset.iloc[max_list[0]]['tid'])
+                for i, m in enumerate(v2_max_list[:200]):
+                    recs.append(
+                        {'track_id': trackset.iloc[v2_max_list[m]]['tid'], 'score': cosine[0][i]})
+                user_recommendations_v2[idx2workout[wid]] = recs
 
-                user_recommendations[idx2workout[wid]] = recs
+                v3_max_list = np.argsort(combined)[::-1]
+                combined.sort(reverse=True)
+                recs = []
+                for i, m in enumerate(v3_max_list[:200]):
+                    recs.append(
+                        {'track_id': trackset.iloc[v3_max_list[m]]['tid'], 'score': combined[i]})
+                user_recommendations_v3[idx2workout[wid]] = recs
+
+                v4_max_list = np.argsort(weighted)[::-1]
+                weighted.sort(reverse=True)
+                recs = []
+                for i, m in enumerate(v4_max_list[:200]):
+                    recs.append(
+                        {'track_id': trackset.iloc[v4_max_list[m]]['tid'], 'score': weighted[i]})
+                user_recommendations_v4[idx2workout[wid]] = recs
+
         db.recommendations.update_one({'user_id': str(user)}, {'$set': {
-                                      "v2": user_recommendations, "updated_at": int(round(time.time()))}}, upsert=True)
+                                      "v2": user_recommendations_v2, "v3": user_recommendations_v3, "v4": user_recommendations_v4, "updated_at": int(round(time.time()))}}, upsert=True)
 
     print("Saved recommendations to database")
 
