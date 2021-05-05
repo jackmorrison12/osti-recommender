@@ -276,18 +276,19 @@ def v2():
                 # Make a one-hot encoding of album and artists, but values can be more than one depending on popularity
                 artist_map = defaultdict(int)
                 for index, row in workout_listening_history.iterrows():
-                    # print(row.index)
                     if "spotify" in track_map[row['tid']]:
                         for a in row['artists']:
                             artist_map[a] += 1
                 artist_max = max(artist_map.values())
+
+                workout_listening_history['rating'] += 0.5
 
                 # Get the trackset of potential tracks
                 trackset = pd.concat([workout_listening_history, workout_tracks_features[wid].sort_values('rating', ascending=False).head(
                     200), user_tracks_features[user2idx[str(user)]].sort_values('rating', ascending=False).head(1000)])
 
                 trackset = trackset.sort_values(
-                    'rating', ascending=False).drop_duplicates('tid').sort_index()
+                    'rating', ascending=False).drop_duplicates('tid')
                 trackset = trackset.reset_index()
                 # Calculate cosine distance between the mean value vector and every song in user_tracks union workout_tracks - ADD IN RELEASE DATE
                 cosine = cdist([avgs], trackset.drop(
