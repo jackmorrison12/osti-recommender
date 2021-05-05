@@ -285,7 +285,9 @@ def v2():
                 # Get the trackset of potential tracks
                 trackset = pd.concat([workout_listening_history, workout_tracks_features[wid].sort_values('rating', ascending=False).head(
                     200), user_tracks_features[user2idx[str(user)]].sort_values('rating', ascending=False).head(1000)])
-                trackset = trackset.drop_duplicates(subset=['tid'])
+
+                trackset = trackset.sort_values(
+                    'rating', ascending=False).drop_duplicates('tid').sort_index()
                 trackset = trackset.reset_index()
                 # Calculate cosine distance between the mean value vector and every song in user_tracks union workout_tracks - ADD IN RELEASE DATE
                 cosine = cdist([avgs], trackset.drop(
