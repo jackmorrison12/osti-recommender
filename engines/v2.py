@@ -166,7 +166,6 @@ def v2():
 
     tids = set()
     for wid, workout in enumerate(utility_matrix):
-        # print(idx2workout[wid])
         for uid, user in enumerate(workout):
             # Get max value for user to normalise by
             user_max = max(user)
@@ -245,11 +244,28 @@ def v2():
     print("User and workout songs retrieved")
     print("Calculating recommendations and saving to database...")
 
+    cursor = db.boosts.find({})
+    boosts = list(cursor)
+    cursor = db.workout_types.find({})
+    workout_ids = list(cursor)
+
+    wid2workout = {}
+    workout2wid = {}
+    for w in workout_ids:
+        wid2workout[str(w['_id'])] = w['name']
+        workout2wid[w['name']] = str(w['_id'])
+
+    boost_map = defaultdict(lambda: defaultdict(list))
+    for boost in boosts:
+        boost_map[boost['user_id']][boost['workout_id']].append(
+            {'tid': boost['track_id'], 'value': boost['value']})
+
     # for u in users:
     for user in users:
         user_recommendations_v2 = {}
         user_recommendations_v3 = {}
         user_recommendations_v4 = {}
+        user_recommendations_v5 = {}
 
         # For each workout type of theirs - need a way to check if they have any listens for a particular workout, so iterate
         # over each workout type, and if user_workout_tracks for uid and wid > 0, then generate recommendations
@@ -298,7 +314,6 @@ def v2():
                 # more weighting on songs they usually listen to
                 combined = []
                 weighted = []
-                # print(trackset.shape[0])
                 for index, row in trackset.iterrows():
                     total = 2 * cosine[0][index]
                     if "spotify" in track_map[row['tid']]:
@@ -314,7 +329,7 @@ def v2():
                 recs = []
                 for i, m in enumerate(v2_max_list[:200]):
                     recs.append(
-                        {'track_id': trackset.iloc[v2_max_list[m]]['tid'], 'score': cosine[0][i]})
+                        {'track_id': trackset.iloc[v2_max_list[i]]['tid'], 'score': cosine[0][m]})
                 user_recommendations_v2[idx2workout[wid]] = recs
 
                 v3_max_list = np.argsort(combined)[::-1]
@@ -322,7 +337,7 @@ def v2():
                 recs = []
                 for i, m in enumerate(v3_max_list[:200]):
                     recs.append(
-                        {'track_id': trackset.iloc[v3_max_list[m]]['tid'], 'score': combined[i]})
+                        {'track_id': trackset.iloc[v3_max_list[i]]['tid'], 'score': combined[m]})
                 user_recommendations_v3[idx2workout[wid]] = recs
 
                 v4_max_list = np.argsort(weighted)[::-1]
@@ -330,11 +345,26 @@ def v2():
                 recs = []
                 for i, m in enumerate(v4_max_list[:200]):
                     recs.append(
-                        {'track_id': trackset.iloc[v4_max_list[m]]['tid'], 'score': weighted[i]})
+                        {'track_id': trackset.iloc[v4_max_list[i]]['tid'], 'score': weighted[m]})
                 user_recommendations_v4[idx2workout[wid]] = recs
 
+                feedback = weighted.copy()
+                half_weight = max(weighted) / 2
+
+                for boost in boost_map[str(user)][workout2wid[idx2workout[wid]]]:
+                    feedback[trackset[trackset['tid'] == boost['tid']
+                                      ].index.values[0]] += (int(boost['value']) * half_weight)
+
+                v5_max_list = np.argsort(feedback)[::-1]
+                feedback.sort(reverse=True)
+                recs = []
+                for i, m in enumerate(v5_max_list[:200]):
+                    recs.append(
+                        {'track_id': trackset.iloc[v5_max_list[i]]['tid'], 'score': feedback[m]})
+                user_recommendations_v5[idx2workout[wid]] = recs
+
         db.recommendations.update_one({'user_id': str(user)}, {'$set': {
-                                      "v2": user_recommendations_v2, "v3": user_recommendations_v3, "v4": user_recommendations_v4, "updated_at": int(round(time.time()))}}, upsert=True)
+                                      "v2": user_recommendations_v2, "v3": user_recommendations_v3, "v4": user_recommendations_v4, "v5": user_recommendations_v5, "updated_at": int(round(time.time()))}}, upsert=True)
 
     print("Saved recommendations to database")
 
