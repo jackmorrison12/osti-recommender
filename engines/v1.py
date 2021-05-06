@@ -116,7 +116,8 @@ def v1():
 
                 song_ranking[idx2workout[wid]] = []
                 for w in sorted(song_map, key=song_map.get, reverse=True):
-                    song_ranking[idx2workout[wid]].append(w)
+                    song_ranking[idx2workout[wid]].append(
+                        {'track_id': w, 'score': workout[song2idx[w]]})
 
         # Add recommendations to database for this user
         db.recommendations.update_one({'user_id': idx2user[uid]}, {
