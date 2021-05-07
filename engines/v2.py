@@ -315,7 +315,7 @@ def v2():
                 combined = []
                 weighted = []
                 for index, row in trackset.iterrows():
-                    total = 2 * cosine[0][index]
+                    total = 5 * cosine[0][index]
                     if "spotify" in track_map[row['tid']]:
                         for a in row['artists']:
                             total += ((artist_map[a]/artist_max) *
