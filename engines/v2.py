@@ -316,7 +316,7 @@ def v2():
                 weighted = []
                 avg_rating = trackset['rating'].mean()
                 for index, row in trackset.iterrows():
-                    total = 4 * cosine[0][index]
+                    total = 2 * cosine[0][index]
                     if "spotify" in track_map[row['tid']]:
                         for a in row['artists']:
                             total += ((artist_map[a]/artist_max) *
