@@ -325,28 +325,25 @@ def v2():
                     weighted.append(total*(max(1, row['rating'] + avg_rating)))
 
                 v2_max_list = np.argsort(cosine[0])[::-1]
-                cosine[0].sort()
                 cosine[0] = cosine[0][::-1]
                 recs = []
                 for i, m in enumerate(v2_max_list[:200]):
                     recs.append(
-                        {'track_id': trackset.iloc[v2_max_list[i]]['tid'], 'score': cosine[0][m]})
+                        {'track_id': trackset.iloc[m]['tid'], 'score': cosine[0][m]})
                 user_recommendations_v2[idx2workout[wid]] = recs
 
                 v3_max_list = np.argsort(combined)[::-1]
-                combined.sort(reverse=True)
                 recs = []
                 for i, m in enumerate(v3_max_list[:200]):
                     recs.append(
-                        {'track_id': trackset.iloc[v3_max_list[i]]['tid'], 'score': combined[m]})
+                        {'track_id': trackset.iloc[m]['tid'], 'score': combined[m]})
                 user_recommendations_v3[idx2workout[wid]] = recs
 
                 v4_max_list = np.argsort(weighted)[::-1]
-                weighted.sort(reverse=True)
                 recs = []
                 for i, m in enumerate(v4_max_list[:200]):
                     recs.append(
-                        {'track_id': trackset.iloc[v4_max_list[i]]['tid'], 'score': weighted[m]})
+                        {'track_id': trackset.iloc[m]['tid'], 'score': weighted[m]})
                 user_recommendations_v4[idx2workout[wid]] = recs
 
                 feedback = weighted.copy()
@@ -357,11 +354,10 @@ def v2():
                                       ].index.values[0]] += (int(boost['value']) * weight)
 
                 v5_max_list = np.argsort(feedback)[::-1]
-                feedback.sort(reverse=True)
                 recs = []
                 for i, m in enumerate(v5_max_list[:200]):
                     recs.append(
-                        {'track_id': trackset.iloc[v5_max_list[i]]['tid'], 'score': feedback[m]})
+                        {'track_id': trackset.iloc[m]['tid'], 'score': feedback[m]})
                 user_recommendations_v5[idx2workout[wid]] = recs
 
         db.recommendations.update_one({'user_id': str(user)}, {'$set': {
