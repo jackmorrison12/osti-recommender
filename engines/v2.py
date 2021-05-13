@@ -325,7 +325,6 @@ def v2():
                     weighted.append(total*(max(1, row['rating'] + avg_rating)))
 
                 v2_max_list = np.argsort(cosine[0])[::-1]
-                cosine[0] = cosine[0][::-1]
                 recs = []
                 for i, m in enumerate(v2_max_list[:200]):
                     recs.append(
