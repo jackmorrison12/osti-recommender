@@ -316,11 +316,11 @@ def v2():
                 weighted = []
                 avg_rating = trackset['rating'].mean()
                 for index, row in trackset.iterrows():
-                    total = 5 * cosine[0][index]
+                    total = 4 * cosine[0][index]
                     if "spotify" in track_map[row['tid']]:
                         for a in row['artists']:
                             total += ((artist_map[a]/artist_max) *
-                                      (max(cosine[0])/3))/len(row['artists'])
+                                      (max(cosine[0])/2))/len(row['artists'])
                     combined.append(total)
                     weighted.append(total*(max(1, row['rating'] + avg_rating)))
 
@@ -347,7 +347,7 @@ def v2():
                 user_recommendations_v4[idx2workout[wid]] = recs
 
                 feedback = weighted.copy()
-                weight = max(weighted) / 4
+                weight = max(weighted) / 3
 
                 for boost in boost_map[str(user)][workout2wid[idx2workout[wid]]]:
                     feedback[trackset[trackset['tid'] == boost['tid']
