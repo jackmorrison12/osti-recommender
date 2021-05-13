@@ -175,7 +175,7 @@ def v2():
                     user_workout_tracks_map[wid]['uid'].append(idx2user[uid])
                     user_workout_tracks_map[wid]['tid'].append(idx2song[tid])
                     user_workout_tracks_map[wid]['rating'].append(
-                        (rating)/user_max)
+                        (rating*1.5)/user_max)
                     workout_tracks_map[wid][idx2song[tid]] += rating
                     tids.add(tid)
 
@@ -320,10 +320,10 @@ def v2():
                     if "spotify" in track_map[row['tid']]:
                         for a in row['artists']:
                             total += ((artist_map[a]/artist_max) *
-                                      (max(cosine[0])/4))/len(row['artists'])
+                                      (max(cosine[0])/6))/len(row['artists'])
                     combined.append(total)
                     weighted.append(
-                        total*(max(1.3, row['rating'] + (avg_rating/3))))
+                        total*(max(1.8, row['rating'] + (avg_rating/3))))
 
                 v2_max_list = np.argsort(cosine[0])[::-1]
                 recs = []
