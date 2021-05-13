@@ -320,10 +320,10 @@ def v2():
                     if "spotify" in track_map[row['tid']]:
                         for a in row['artists']:
                             total += ((artist_map[a]/artist_max) *
-                                      (max(cosine[0])/2))/len(row['artists'])
+                                      (max(cosine[0])/4))/len(row['artists'])
                     combined.append(total)
                     weighted.append(
-                        total*(max(1, row['rating'] + (avg_rating/3))))
+                        total*(max(1.2, row['rating'] + (avg_rating/3))))
 
                 v2_max_list = np.argsort(cosine[0])[::-1]
                 recs = []
