@@ -323,7 +323,7 @@ def v2():
                                       (max(cosine[0])/4))/len(row['artists'])
                     combined.append(total)
                     weighted.append(
-                        total*(max(1.2, row['rating'] + (avg_rating/3))))
+                        total*(max(1.3, row['rating'] + (avg_rating/3))))
 
                 v2_max_list = np.argsort(cosine[0])[::-1]
                 recs = []
