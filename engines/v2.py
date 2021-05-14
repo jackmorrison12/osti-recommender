@@ -321,7 +321,7 @@ def v2():
                     if "spotify" in track_map[row['tid']]:
                         for a in row['artists']:
                             total += ((artist_map[a]/artist_max) *
-                                      (max(cosine[0])/4))/len(row['artists'])
+                                      (max(cosine[0])/6))/len(row['artists'])
                     combined.append(total)
                     weighted.append(total*(row['rating']**0.6))
 
