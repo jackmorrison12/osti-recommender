@@ -317,7 +317,7 @@ def v2():
                 weighted = []
                 cosines = []
                 for c in cosine[0]:
-                    cosines.append(total=(4 * (1 - c) *
+                    cosines.append((4 * (1 - c) *
                                           (1 - c) * 10000) - 39960)
                 for index, row in trackset.iterrows():
                     total = (4 * (1 - cosine[0][index]) *
@@ -330,7 +330,7 @@ def v2():
                     if row['rating'] > 2:
                         if total < 0:
                             total -= min(cosines)
-                        weighted.append(total*(row['rating']))
+                        weighted.append(total*(row['rating']**0.2))
                     else:
                         weighted.append(total*(row['rating']**0.2))
 
