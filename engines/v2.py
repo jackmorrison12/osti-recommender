@@ -298,7 +298,7 @@ def v2():
                             artist_map[a] += 1
                 artist_max = max(artist_map.values())
 
-                workout_listening_history['rating'] += 1
+                workout_listening_history['rating'] += 2
 
                 # Get the trackset of potential tracks
                 trackset = pd.concat([workout_listening_history, workout_tracks_features[wid].sort_values('rating', ascending=False).head(
