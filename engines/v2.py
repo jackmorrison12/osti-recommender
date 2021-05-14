@@ -318,7 +318,7 @@ def v2():
                 avg_rating = trackset['rating'].mean()
                 for index, row in trackset.iterrows():
                     total = (4 * (1 - cosine[0][index]) *
-                             (1 - cosine[0][index]) * 10000) - 39980
+                             (1 - cosine[0][index]) * 10000) - 39960
                     if "spotify" in track_map[row['tid']]:
                         for a in row['artists']:
                             total += ((artist_map[a]/artist_max) *
@@ -348,12 +348,12 @@ def v2():
                 user_recommendations_v4[idx2workout[wid]] = recs
 
                 feedback = weighted.copy()
-                weight = max(weighted)/2
+                weight = max(weighted)/3
 
                 for boost in boost_map[str(user)][workout2wid[idx2workout[wid]]]:
                     feedback[trackset[trackset['tid'] == boost['tid']
-                                      ].index.values[0]] = max(0,feedback[trackset[trackset['tid'] == boost['tid']
-                                      ].index.values[0]]) + (int(boost['value']) * weight)
+                                      ].index.values[0]] = max(0, feedback[trackset[trackset['tid'] == boost['tid']
+                                                                                    ].index.values[0]]) + (int(boost['value']) * weight)
 
                 v5_max_list = np.argsort(feedback)[::-1]
                 recs = []
