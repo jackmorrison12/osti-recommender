@@ -352,7 +352,8 @@ def v2():
 
                 for boost in boost_map[str(user)][workout2wid[idx2workout[wid]]]:
                     feedback[trackset[trackset['tid'] == boost['tid']
-                                      ].index.values[0]] += (int(boost['value']) * weight)
+                                      ].index.values[0]] = max(0,feedback[trackset[trackset['tid'] == boost['tid']
+                                      ].index.values[0]]) + (int(boost['value']) * weight)
 
                 v5_max_list = np.argsort(feedback)[::-1]
                 recs = []
