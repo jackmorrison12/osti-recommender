@@ -298,7 +298,7 @@ def v2():
                             artist_map[a] += 1
                 artist_max = max(artist_map.values())
 
-                # workout_listening_history['rating'] += 0.5
+                workout_listening_history['rating'] += 0.5
 
                 # Get the trackset of potential tracks
                 trackset = pd.concat([workout_listening_history, workout_tracks_features[wid].sort_values('rating', ascending=False).head(
@@ -324,7 +324,7 @@ def v2():
                             total += ((artist_map[a]/artist_max) *
                                       (max(cosine[0])/4))/len(row['artists'])
                     combined.append(total)
-                    weighted.append(total*(row['rating']**0.6))
+                    weighted.append(total*(row['rating']**0.2))
 
                 v2_max_list = np.argsort(cosine[0])
                 recs = []
@@ -348,7 +348,7 @@ def v2():
                 user_recommendations_v4[idx2workout[wid]] = recs
 
                 feedback = weighted.copy()
-                weight = max(weighted) / 2
+                weight = max(weighted) / 3
 
                 for boost in boost_map[str(user)][workout2wid[idx2workout[wid]]]:
                     feedback[trackset[trackset['tid'] == boost['tid']
