@@ -222,7 +222,7 @@ def v2():
         else:
             max_listens = 1
         df = pd.DataFrame({"tid": w.keys(), "count": [
-                          c/(2*max_listens) for c in w.values()]}, columns=['tid', 'count'])
+                          c/(max_listens) for c in w.values()]}, columns=['tid', 'count'])
         workout_tracks.append(df)
 
     user_tracks = [pd.DataFrame({"tid": [], "count":[]}, columns=[
@@ -298,7 +298,7 @@ def v2():
                             artist_map[a] += 1
                 artist_max = max(artist_map.values())
 
-                workout_listening_history['rating'] += 0.5
+                # workout_listening_history['rating'] += 0.5
 
                 # Get the trackset of potential tracks
                 trackset = pd.concat([workout_listening_history, workout_tracks_features[wid].sort_values('rating', ascending=False).head(
