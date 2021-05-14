@@ -298,7 +298,7 @@ def v2():
                             artist_map[a] += 1
                 artist_max = max(artist_map.values())
 
-                workout_listening_history['rating'] += 0.5
+                workout_listening_history['rating'] += 1
 
                 # Get the trackset of potential tracks
                 trackset = pd.concat([workout_listening_history, workout_tracks_features[wid].sort_values('rating', ascending=False).head(
@@ -324,7 +324,7 @@ def v2():
                             total += ((artist_map[a]/artist_max) *
                                       (max(2 * (1 - cosine[0]))))/len(row['artists'])
                     combined.append(total)
-                    weighted.append(total*(row['rating']**0.4))
+                    weighted.append(total*(row['rating']**0.3))
 
                 v2_max_list = np.argsort(cosine[0])
                 recs = []
