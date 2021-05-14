@@ -348,7 +348,7 @@ def v2():
                 user_recommendations_v4[idx2workout[wid]] = recs
 
                 feedback = weighted.copy()
-                weight = max(weighted) / 3
+                weight = max(weighted)/2
 
                 for boost in boost_map[str(user)][workout2wid[idx2workout[wid]]]:
                     feedback[trackset[trackset['tid'] == boost['tid']
