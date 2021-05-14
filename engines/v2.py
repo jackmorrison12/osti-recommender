@@ -315,7 +315,10 @@ def v2():
                 # more weighting on songs they usually listen to
                 combined = []
                 weighted = []
-                avg_rating = trackset['rating'].mean()
+                cosines = []
+                for c in cosine[0]:
+                    cosines.append(total=(4 * (1 - c) *
+                                          (1 - c) * 10000) - 39960)
                 for index, row in trackset.iterrows():
                     total = (4 * (1 - cosine[0][index]) *
                              (1 - cosine[0][index]) * 10000) - 39960
@@ -324,7 +327,12 @@ def v2():
                             total += ((artist_map[a]/artist_max) *
                                       (max(2 * (1 - cosine[0]))))/len(row['artists'])
                     combined.append(total)
-                    weighted.append(total*(row['rating']**0.3))
+                    if row['rating'] > 2:
+                        if total < 0:
+                            total -= min(cosines)
+                        weighted.append(total*(row['rating']))
+                    else:
+                        weighted.append(total*(row['rating']**0.2))
 
                 v2_max_list = np.argsort(cosine[0])
                 recs = []
