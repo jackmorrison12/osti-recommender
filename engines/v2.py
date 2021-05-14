@@ -317,13 +317,13 @@ def v2():
                 weighted = []
                 avg_rating = trackset['rating'].mean()
                 for index, row in trackset.iterrows():
-                    total = 4 * (1 - cosine[0][index])
+                    total = 4 * (1 - cosine[0][index]) * (1 - cosine[0][index])
                     if "spotify" in track_map[row['tid']]:
                         for a in row['artists']:
                             total += ((artist_map[a]/artist_max) *
                                       (max(cosine[0])/4))/len(row['artists'])
                     combined.append(total)
-                    weighted.append(total*row['rating'])
+                    weighted.append(total*(row['rating']**0.6))
 
                 v2_max_list = np.argsort(cosine[0])
                 recs = []
