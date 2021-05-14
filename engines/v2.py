@@ -139,23 +139,24 @@ def v2():
 
     # Iterate over users
     for user in listens2:
-        # get the initial workout time and listen time as cur_workout_start, cur_workout_end, cur_workout_id
-        cur_workout = 0
-        # iterate over the listens
-        for listen in listens2[user]:
-            # if listen in workout
-            if listen['time'] * 1000 >= workouts2[user][cur_workout]['start_time'] and listen['time'] * 1000 <= workouts2[user][cur_workout]['end_time']:
-                utility_matrix[workout2idx[workouts2[user][cur_workout]['activity_type']]
-                               ][user2idx[listen['user_id']]][song2idx[str(listen["song_id"])]] += 1
-        # if listen after workout, increment workout times to next workout and check again
-            elif listen["time"] * 1000 > workouts2[user][cur_workout]["end_time"]:
-                cur_workout += 1
-            if cur_workout >= len(workouts2[user]):
-                break
-            # Recheck if it lies in a new workout
-            if listen['time'] * 1000 >= workouts2[user][cur_workout]['start_time'] and listen['time'] * 1000 <= workouts2[user][cur_workout]['end_time']:
-                utility_matrix[workout2idx[workouts2[user][cur_workout]['activity_type']]
-                               ][user2idx[listen['user_id']]][song2idx[str(listen["song_id"])]] += 1
+        if user in workouts2:
+            # get the initial workout time and listen time as cur_workout_start, cur_workout_end, cur_workout_id
+            cur_workout = 0
+            # iterate over the listens
+            for listen in listens2[user]:
+                # if listen in workout
+                if listen['time'] * 1000 >= workouts2[user][cur_workout]['start_time'] and listen['time'] * 1000 <= workouts2[user][cur_workout]['end_time']:
+                    utility_matrix[workout2idx[workouts2[user][cur_workout]['activity_type']]
+                                   ][user2idx[listen['user_id']]][song2idx[str(listen["song_id"])]] += 1
+            # if listen after workout, increment workout times to next workout and check again
+                elif listen["time"] * 1000 > workouts2[user][cur_workout]["end_time"]:
+                    cur_workout += 1
+                if cur_workout >= len(workouts2[user]):
+                    break
+                # Recheck if it lies in a new workout
+                if listen['time'] * 1000 >= workouts2[user][cur_workout]['start_time'] and listen['time'] * 1000 <= workouts2[user][cur_workout]['end_time']:
+                    utility_matrix[workout2idx[workouts2[user][cur_workout]['activity_type']]
+                                   ][user2idx[listen['user_id']]][song2idx[str(listen["song_id"])]] += 1
 
     print("Calculated utility matrix")
     print("Getting user and workout songs...")
