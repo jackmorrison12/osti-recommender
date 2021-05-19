@@ -251,7 +251,7 @@ def generate_playlist(uid, wid):
         xpoints = np.array([])
         ypoints = np.array([])
         for c in workout_plots[w]:
-            if len(workout_plots[w][c]) > min(2, len(workouts)/3):
+            if len(workout_plots[w][c]) > 1:
                 xpoints = np.append(xpoints, c)
                 ypoints = np.append(ypoints, np.mean(workout_plots[w][c]))
         workout_plots[w] = [xpoints, ypoints]
@@ -495,8 +495,12 @@ def generate_playlist(uid, wid):
             # target_hr =
             segs_to_check = int(
                 song_map[trackset[i]['track_id']]['features']['duration']/10000)
-            target_hr = np.add(np.array(targets['heart_rates'][pointer:(pointer + segs_to_check)]), np.array(
-                target_deltas['heart_rates'][pointer:(pointer + segs_to_check)])).mean()
+            if len(target_deltas['heart_rates']) > 0:
+                target_hr = np.add(np.array(targets['heart_rates'][pointer:(pointer + segs_to_check)]), np.array(
+                    target_deltas['heart_rates'][pointer:(pointer + segs_to_check)])).mean()
+            else:
+                target_hr = np.array(
+                    targets['heart_rates'][pointer:(pointer + segs_to_check)]).mean()
             bpm_dist = abs((tempo - target_hr)/target_hr)
 
             # Check position in the recommendations
@@ -534,4 +538,24 @@ def generate_playlist(uid, wid):
         db.playlists.delete_one({"_id": playlists[0]['_id']})
 
     print("Playlist saved to database")
-    return 1
+    return playlist
+
+
+def generate_all_playlists():
+
+    db = MongoClient(os.getenv('MONGO_URI')).osti
+
+    cursor = db.workout_types.find({})
+    workout_ids = list(cursor)
+
+    wid2workout = {}
+    workout2wid = {}
+    for w in workout_ids:
+        wid2workout[str(w['_id'])] = w['name']
+        workout2wid[w['name']] = str(w['_id'])
+
+    recs = list(db.recommendations.find())
+
+    for rec in recs:
+        for workout in rec['v1']:
+            generate_playlist(rec['user_id'], workout2wid[workout])

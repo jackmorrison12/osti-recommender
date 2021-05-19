@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from recommendation_engines.v1 import v1
 from recommendation_engines.v2 import v2
 from playlist_engines.v1 import generate_playlist
+from playlist_engines.v1 import generate_all_playlists
+
 from celery import Celery
 
 # Get the base directory
@@ -73,6 +75,13 @@ def playlist_redis(uid, wid):
         return "Generating playlist for user " + uid + " workout " + wid
 
 
+@celery.task
+def playlist_all_redis():
+    with app.app_context():
+        generate_all_playlists()
+        return "Generating all playlists"
+
+
 @ app.route('/v1')
 def v1_flask():
     print("Running v1...")
@@ -99,6 +108,14 @@ def playlist_flask():
     return 'Playlist generation triggered'
 
 
+@ app.route('/generate_all_playlists', )
+def playlist_all_flask():
+    print("Generating playlists...")
+    task = playlist_all_redis.delay()
+    print(task)
+    return 'Playlist generations triggered'
+
+
 @ app.route('/redis')
 def redis():
     print("here")
@@ -112,4 +129,5 @@ def index():
     # v1()
     # v2()
     # generate_playlist('606c78c40326f734f14f326b', '6091a67b96e683e8598e6525')
+    generate_all_playlists()
     return "Osti Recommender"
