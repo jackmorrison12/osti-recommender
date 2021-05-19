@@ -129,5 +129,5 @@ def index():
     # v1()
     # v2()
     # generate_playlist('606c78c40326f734f14f326b', '6091a67b96e683e8598e6525')
-    generate_all_playlists()
+    # generate_all_playlists()
     return "Osti Recommender"
