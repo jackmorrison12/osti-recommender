@@ -498,10 +498,15 @@ def generate_playlist(uid, wid):
             if len(target_deltas['heart_rates']) > 0:
                 target_hr = np.add(np.array(targets['heart_rates'][pointer:(pointer + segs_to_check)]), np.array(
                     target_deltas['heart_rates'][pointer:(pointer + segs_to_check)])).mean()
-            else:
+            elif 'heart_rates' in targets:
                 target_hr = np.array(
                     targets['heart_rates'][pointer:(pointer + segs_to_check)]).mean()
-            bpm_dist = abs((tempo - target_hr)/target_hr)
+            else:
+                target_hr = -1
+
+            bpm_dist = 0
+            if target_hr > -1:
+                bpm_dist = abs((tempo - target_hr)/target_hr)
 
             # Check position in the recommendations
 
@@ -558,4 +563,6 @@ def generate_all_playlists():
 
     for rec in recs:
         for workout in rec['v1']:
+            print("Generating for user ",
+                  rec['user_id'], "workout", workout2wid[workout])
             generate_playlist(rec['user_id'], workout2wid[workout])
