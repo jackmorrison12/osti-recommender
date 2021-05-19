@@ -1,11 +1,12 @@
-from flask import Flask
+from flask import Flask, request
 from flask_mail import Mail, Message
 from flask_mongoengine import MongoEngine
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-from engines.v1 import v1
-from engines.v2 import v2
+from recommendation_engines.v1 import v1
+from recommendation_engines.v2 import v2
+from playlist_engines.v1 import generate_playlist
 from celery import Celery
 
 # Get the base directory
@@ -65,6 +66,13 @@ def v2_redis():
         return "Running v2"
 
 
+@celery.task
+def playlist_redis(uid, wid):
+    with app.app_context():
+        generate_playlist(uid, wid)
+        return "Generating playlist for user " + uid + " workout " + wid
+
+
 @ app.route('/v1')
 def v1_flask():
     print("Running v1...")
@@ -81,6 +89,16 @@ def v2_flask():
     return 'v2 triggered'
 
 
+@ app.route('/generate_playlist', methods=['POST'])
+def playlist_flask():
+    request_data = request.get_json()
+    print("Generating playlist...")
+    task = playlist_redis.delay(
+        request_data['uid'], request_data['wid'])
+    print(task)
+    return 'Playlist generation triggered'
+
+
 @ app.route('/redis')
 def redis():
     print("here")
@@ -92,5 +110,6 @@ def redis():
 @ app.route('/')
 def index():
     # v1()
-    v2()
+    # v2()
+    # generate_playlist('606c78c40326f734f14f326b', '6091a67b96e683e8598e6525')
     return "Osti Recommender"
