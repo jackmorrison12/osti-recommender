@@ -533,8 +533,8 @@ def generate_playlist(uid, wid):
 
     print("Saving playlist to database...")
 
-    db.playlists.insert_one({'user_id': uid, 'workout_id': wid,
-                            "tracks": playlist, "created_at": int(round(time.time()))})
+    db.playlists.update_one({'user_id': uid, 'workout_id': wid, "tracks": playlist}, {
+                            "$set": {"created_at": int(round(time.time()))}}, upsert=True)
 
     # If more than 10 playlists for this user and workout, delete the oldest one
     playlists = list(db.playlists.find(
