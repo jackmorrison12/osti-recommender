@@ -8,7 +8,7 @@ from recommendation_engines.v1 import v1
 from recommendation_engines.v2 import v2
 from playlist_engines.v1 import generate_playlist
 from playlist_engines.v1 import generate_all_playlists
-from realtime.db import get_playlist
+from realtime.db import get_initial_data
 
 from celery import Celery
 
@@ -136,9 +136,9 @@ def index():
 # Routes for the real time app
 
 
-@ app.route('/get_playlist', methods=['POST'])
-def get_playlist_route():
+@ app.route('/get_initial_data', methods=['POST'])
+def get_initial_data_route():
     request_data = request.get_json()
-    print("Getting playlist of type",
+    print("Getting initial data for workout of type",
           request_data['wid'], "for user", request_data['uid'])
-    return get_playlist(request_data['uid'], request_data['wid'])
+    return get_initial_data(request_data['uid'], request_data['wid'])
