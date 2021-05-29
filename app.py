@@ -8,6 +8,7 @@ from recommendation_engines.v1 import v1
 from recommendation_engines.v2 import v2
 from playlist_engines.v1 import generate_playlist
 from playlist_engines.v1 import generate_all_playlists
+from realtime.db import get_playlist
 
 from celery import Celery
 
@@ -131,3 +132,13 @@ def index():
     # generate_playlist('606c78c40326f734f14f326b', '6091a67b96e683e8598e6525')
     # generate_all_playlists()
     return "Osti Recommender"
+
+# Routes for the real time app
+
+
+@ app.route('/get_playlist', methods=['POST'])
+def get_playlist_route():
+    request_data = request.get_json()
+    print("Getting playlist of type",
+          request_data['wid'], "for user", request_data['uid'])
+    return get_playlist(request_data['uid'], request_data['wid'])
