@@ -131,7 +131,7 @@ def index():
     # v2()
     # generate_playlist('606c78c40326f734f14f326b', '6091a67b96e683e8598e6525')
     # generate_all_playlists()
-    return "Osti Recommender"
+    return "Osti Recommender is Alive"
 
 # Routes for the real time app
 
