@@ -26,6 +26,10 @@ def get_initial_data(uid, wid):
     track_ids = [ObjectId(t['track_id']) for t in workout_recs]
     track_data = list(db.tracks.find({"_id": {"$in": list(track_ids)}}))
 
+    track_map = {}
+    for track in track_data:
+        track_map[str(track["_id"])] = track
+
     for track in track_data:
         track['_id'] = str(track['_id'])
 
@@ -146,7 +150,7 @@ def get_initial_data(uid, wid):
     result['playlist'] = playlist
     result['stats'] = stats
     result['recs'] = workout_recs
-    result['track_data'] = track_data
+    result['track_data'] = track_map
     result['deltas'] = delta_map
 
     return result
