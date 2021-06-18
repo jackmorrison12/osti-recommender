@@ -87,7 +87,7 @@ def v1():
                     utility_matrix[user2idx[listen['user_id']]][workout2idx[workouts2[user]
                                                                             [cur_workout]['activity_type']]][song2idx[str(listen["song_id"])]] += 1
 
-        # if listen after workout, increment workout times to next workout and check again
+                # if listen after workout, increment workout times to next workout and check again
                 elif listen["time"] * 1000 > workouts2[user][cur_workout]["end_time"]:
                     cur_workout += 1
                     if cur_workout >= len(workouts2[user]):

@@ -8,7 +8,9 @@ from functools import partial
 from bson import ObjectId
 import os
 
-
+# Given a trackset and map of deltas for these tracks, get the cosine
+# distance between each workout deltas at the current pointer and the 
+# average of the track deltas
 def get_track_rankings(trackset, delta_map, song_map, target_deltas, pointer):
     track_rankings = []
     for i, rec in enumerate(trackset):
@@ -55,8 +57,6 @@ def get_track_rankings(trackset, delta_map, song_map, target_deltas, pointer):
             targets.append(target_deltas['speeds'][pointer:(
                 pointer + segs_to_check)][-1] - target_deltas['speeds'][pointer:(pointer + segs_to_check)][0])
             avgs.append(speeds.mean())
-        # print(targets)
-        # print(avgs)
         cosine = cdist([targets], [avgs], metric='cosine')
         if cosine[0][0] == 0:
             track_rankings.append(1)
@@ -110,8 +110,6 @@ def generate_playlist(uid, wid):
             if listen['time'] * 1000 >= workouts[cur_workout]['start_time'] and listen['time'] * 1000 <= workouts[cur_workout]['end_time']:
                 workouts[cur_workout]['tracks'].append(listen)
                 track_ids.add(listen['song_id'])
-
-        # if listen before workout, pass
 
     songs = db.tracks.find({"_id": {"$in": list(track_ids)}})
     songs = list(songs)
@@ -355,7 +353,6 @@ def generate_playlist(uid, wid):
                 distances = np.array([])
                 speeds = np.array([])
                 while(data_pointer < data_len and int(data[data_pointer]['start_time']) < end):
-                    # print(data[data_pointer])
                     if 'heart_rate' in data[data_pointer]:
                         hrs = np.append(hrs, data[data_pointer]['heart_rate'])
                     if 'calories_burned' in data[data_pointer]:
@@ -472,15 +469,11 @@ def generate_playlist(uid, wid):
         track_rankings = []
         two_track_rankings = np.array(get_track_rankings(
             trackset, two_same_delta_map, song_map, target_deltas, pointer))
-        # two_track_rankings = [r if not np.isnan(r) else np.nanmean(two_track_rankings) for r in two_track_rankings]
         one_track_rankings = np.array(get_track_rankings(
             trackset, one_same_delta_map, song_map, target_deltas, pointer))
-        # one_track_rankings = [r if not np.isnan(r) else np.nanmean(one_track_rankings) for r in one_track_rankings]
         no_track_rankings = np.array(get_track_rankings(
             trackset, no_same_delta_map, song_map, target_deltas, pointer))
-        # no_track_rankings = [r if not np.isnan(r) else np.nanmean(no_track_rankings) for r in no_track_rankings]
 
-        # print(no_track_rankings)
 
         for i in range(len(trackset)):
             two = two_track_rankings[i] if not np.isnan(
@@ -513,13 +506,9 @@ def generate_playlist(uid, wid):
             track_rankings.append(0.5 * two + 0.2 * one +
                                   0.1 * zero + 0.3 * bpm_dist + (i/100000))
 
-        # print(track_rankings)
 
         top_track = track_rankings.index(min(track_rankings))
         playlist.append(trackset[top_track]['track_id'])
-        # print(song_map[trackset[top_track]['track_id']]['name'])
-        # print(track_rankings[top_track])
-        # print(target_hr)
         pointer += int(song_map[trackset[top_track]
                        ['track_id']]['features']['duration']/10000)
         del trackset[top_track]

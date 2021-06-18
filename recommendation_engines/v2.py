@@ -12,8 +12,10 @@ from bson import ObjectId
 
 
 def get_track_data(df, track_map, rating):
-    tids, ratings, artists, albums, danceabilities, energies, keys, loudnesses, modes, speechinesses, acousticnesses, instrumentalnesses, livenesses, valences, tempos, time_signatures, release_dates = [
-    ], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
+    tids, ratings, artists, albums, danceabilities, energies, keys, loudnesses, \
+    modes, speechinesses, acousticnesses, instrumentalnesses, livenesses, valences, \
+    tempos, time_signatures, release_dates = \
+        [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
     for index, row in df.iterrows():
 
         if row['tid'] not in track_map:
@@ -148,7 +150,7 @@ def v2():
                 if listen['time'] * 1000 >= workouts2[user][cur_workout]['start_time'] and listen['time'] * 1000 <= workouts2[user][cur_workout]['end_time']:
                     utility_matrix[workout2idx[workouts2[user][cur_workout]['activity_type']]
                                    ][user2idx[listen['user_id']]][song2idx[str(listen["song_id"])]] += 1
-            # if listen after workout, increment workout times to next workout and check again
+                # if listen after workout, increment workout times to next workout and check again
                 elif listen["time"] * 1000 > workouts2[user][cur_workout]["end_time"]:
                     cur_workout += 1
                 if cur_workout >= len(workouts2[user]):
@@ -180,17 +182,16 @@ def v2():
                     workout_tracks_map[wid][idx2song[tid]] += rating
                     tids.add(tid)
 
-    # Adds in playlists of songs
+    # Adds in playlists of songs from dataset
+    # This isn't run on the heroku machine currently, since it requires too much RAM,
+    # however if uncommented this will be run and added in
 
     # cursor = db.cf_playlists.find({})
     # cf_playlists = list(cursor)
-    # print(len(tids))
 
     # for i, playlist in enumerate(cf_playlists):
     #     for track in playlist['tracks']:
-    #         # print(track)
     #         workout_tracks_map[workout2idx[playlist['workout']]][track] += 1
-    #         # tids.add(str(track))
     #         tids.add(ObjectId(track))
 
     cursor = db.listens.aggregate([{"$sort": {"time": 1}}, {"$group": {"_id": {"user_id": "$user_id", "song_id": "$song_id"}, "total": {
@@ -307,7 +308,8 @@ def v2():
                 trackset = trackset.sort_values(
                     'rating', ascending=False).drop_duplicates('tid')
                 trackset = trackset.reset_index()
-                # Calculate cosine distance between the mean value vector and every song in user_tracks union workout_tracks - ADD IN RELEASE DATE
+                # Calculate cosine distance between the mean value vector and every song in user_tracks union workout_tracks
+
                 cosine = cdist([avgs], trackset.drop(
                     ['index', 'rating', 'artists', 'album', 'release_date'], axis=1).iloc[:, 1:], metric='cosine')
 
